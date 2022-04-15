@@ -233,7 +233,7 @@ public class DrawingGUI {
 
             if (isAllowedToDraw) {
                 // Send to room
-                gameClient.messagesToSend.add(new Message(111, Message.mType.DRAW, new int[]{scaled[0], scaled[1], pastScaled[0], pastScaled[1]}));
+                gameClient.messagesToSend.add(new Message<>(111, Message.mType.DRAW, new int[]{scaled[0], scaled[1], pastScaled[0], pastScaled[1]}));
             }
         }
 

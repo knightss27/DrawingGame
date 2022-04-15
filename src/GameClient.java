@@ -24,6 +24,8 @@ public class GameClient {
     public String currentHint = "";
     public Player currentDrawer;
 
+    boolean isFirstPlayer = false;
+
     public GameClient() {
 
         player = new Player(-1, GameUtils.generateNewRoomCode());
@@ -84,8 +86,11 @@ public class GameClient {
 
                 players = m.data;
 
-                // Temporarily only allow first join to draw.
-                if (m.data.length == 2) {
+
+                // Temporarily only allow third join to start the game.
+                if (m.data.length == 1) {
+                    isFirstPlayer = true;
+                } else if (m.data.length == 2 && isFirstPlayer) {
                     messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
                 }
             }

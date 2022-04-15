@@ -1,8 +1,17 @@
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class Message<T> implements Serializable {
 
+    /**
+     *  JOIN - Player <br>
+     *  PLAYERS - Player[] <br>
+     *  LEAVE <br>
+     *  DRAW - int[] <br>
+     *  CHAT - String <br>
+     *  ROUND - Player <br>
+     *  START <br>
+     *  HINT - String
+     */
     public enum mType {
         JOIN,
         PLAYERS,

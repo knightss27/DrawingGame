@@ -20,6 +20,8 @@ public class ClientConnection {
     int currentRound = -1;
     String currentWord = null;
     Player currentPlayer;
+    boolean guessedCorrectly = false;
+    int totalCorrectGuessesReceived = 0;
 
     public ClientConnection(Socket socket, HashMap<Integer, List<ClientConnection>> rooms) {
         System.out.println("- Creating new client connection");
@@ -114,12 +116,8 @@ public class ClientConnection {
             if (message.type == Message.mType.START) {
                 Message<Player> m = (Message<Player>) message;
                 List<ClientConnection> clients = rooms.get(message.room);
-                if (m.data.equals(clients.get(1).player)) {
-                    // Set all Client Connections to have updated round data.
-                    String newWord = GameUtils.generateNewWord();
-                    for (ClientConnection c : clients) {
-                        c.sendToNextRound(clients.get((currentRound + 1) % clients.size()).player, newWord);
-                    }
+                if (m.data.equals(clients.get(0).player)) {
+                    sendToNewRound(m.room);
                 }
             }
 
@@ -130,12 +128,15 @@ public class ClientConnection {
             if (message.type == Message.mType.CHAT) {
                 Message<String> m = (Message<String>) message;
 
+                boolean justGuessedCorrect = false;
+
                 if (currentRound >= 0) {
                     if (currentPlayer.equals(player)) {
                         m.data = ": I'm dumb!";
                     } else {
                         if (m.data.equals(currentWord)) {
                             m.data = " guessed the word!";
+                            justGuessedCorrect = true;
                         } else {
                             m.data = ": " + m.data;
                         }
@@ -146,9 +147,39 @@ public class ClientConnection {
 
                 m.data = player.name + m.data;
                 sendToRoom(m, true);
+
+                if (justGuessedCorrect) {
+                    guessedCorrectly = true;
+                    getCurrentPlayerConnection().checkWithNewCorrectGuess();
+                }
             }
         }
     }
 
+    public void checkWithNewCorrectGuess() {
+        totalCorrectGuessesReceived++;
+        System.out.println("Total correct guesses: " + totalCorrectGuessesReceived);
+        if (totalCorrectGuessesReceived == rooms.get(currentRoom).size()-1) {
+            sendToNewRound(currentRoom);
+        }
+    }
 
+    private ClientConnection getCurrentPlayerConnection() {
+        for (ClientConnection c : rooms.get(currentRoom)) {
+            if (c.player.equals(currentPlayer)) {
+                return c;
+            }
+        }
+        throw new NoSuchElementException("No matching current player found!");
+    }
+
+    private void sendToNewRound(int room) {
+        System.out.println(player.id + ": Attempting to send to new round.");
+        String newWord = GameUtils.generateNewWord();
+        List<ClientConnection> clients = rooms.get(room);
+        Player nextPlayer = clients.get((currentRound + 1) % clients.size()).player;
+        for (ClientConnection c : clients) {
+            c.sendToNextRound(nextPlayer, newWord);
+        }
+    }
 }
