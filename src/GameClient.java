@@ -11,10 +11,17 @@ public class GameClient {
         new GameClient();
     }
 
+    public LinkedBlockingQueue<Message> messagesToSend = new LinkedBlockingQueue<>();
     DrawingGUI gui;
-//    boolean isAllowedToDraw = false;
+
+    public String userName;
+    public int room = -1;
+    public boolean isAllowedToDraw = false;
 
     public GameClient() {
+
+        userName = GameUtils.generateNewRoomCode();
+
         try {
             // Connect to server
             Socket socket = new Socket("localhost", 12345);
@@ -27,11 +34,9 @@ public class GameClient {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
             objectOutputStream.flush();
 
-            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+            ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
 
-            LinkedBlockingQueue<Message> messagesToSend = new LinkedBlockingQueue<>();
-
-            gui = new DrawingGUI(messagesToSend);
+            gui = new DrawingGUI(this);
 
             SendThread sendThread = new SendThread(messagesToSend, objectOutputStream);
             sendThread.start();
@@ -39,7 +44,7 @@ public class GameClient {
             ListenThread listenThread = new ClientListenThread(socket, objectInputStream);
             listenThread.start();
 
-            messagesToSend.add(new Message(111, Message.mType.JOIN, GameUtils.generateNewRoomCode()));
+            messagesToSend.add(new Message(111, Message.mType.JOIN, userName));
 
 //            objectInputStream.close();
 //            objectOutputStream.close();
@@ -61,14 +66,20 @@ public class GameClient {
             System.out.println("CLIENT RECEIVED: " + message);
 
             if (message.type == Message.mType.PLAYERS) {
-                // Temporarily only allow second join to draw.
-                if (message.arrayData.length == 1) {
-                    gui.isAllowedToDraw = true;
+                Message<String[]> m = (Message<String[]>) message;
+                // Temporarily only allow first join to draw.
+                if (m.data.length == 1) {
+                    isAllowedToDraw = true;
+                }
+
+                if (room == -1) {
+                    room = message.room;
                 }
             }
 
             if (message.type == Message.mType.DRAW) {
-                gui.handleNetworkedDrawing(message.arrayData);
+                Message<int[]> m = (Message<int[]>) message;
+                gui.handleNetworkedDrawing(m.data);
             }
 
             if (message.type == Message.mType.CHAT) {

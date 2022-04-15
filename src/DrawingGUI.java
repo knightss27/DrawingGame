@@ -1,4 +1,7 @@
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -9,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class DrawingGUI {
 
-    BlockingQueue<Message> messagesToSend;
+    GameClient gameClient;
 
     JFrame mainFrame = new JFrame("Drawing Game");
     JPanel mainPanel = new JPanel();
@@ -23,21 +26,45 @@ public class DrawingGUI {
 
     public boolean isAllowedToDraw = false;
 
-    public DrawingGUI(BlockingQueue<Message> messagesToSend) {
-        this.messagesToSend = messagesToSend;
+    public DrawingGUI(GameClient gameClient) {
+        this.gameClient = gameClient;
         drawingPanel = new DrawingPanel();
         chatPanel = new ChatPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(drawingPanel, BorderLayout.CENTER);
         mainPanel.add(chatPanel, BorderLayout.EAST);
+        mainPanel.add(new HintPanel(), BorderLayout.NORTH);
         generateFrame(mainPanel);
 
         drawingPanel.createBlank();
     }
 
-    public void handleChat(Message m) {
-        chatPanel.messages.addFirst(m.text);
+    public void handleChat(Message<String> m) {
+        chatPanel.messages.addFirst(m.data);
         chatPanel.repaint();
+    }
+
+    private class HintPanel extends JPanel {
+        public String currentWord = "testing";
+
+        public HintPanel() {
+            setPreferredSize(new Dimension(3*DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT/10));
+            setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            paintBorder(g);
+
+            Graphics2D pen = (Graphics2D) g;
+            int x = getWidth()/2 - currentWord.length()/2 * 16;
+            for (int i = 0; i < currentWord.length(); i++) {
+                pen.drawString(currentWord.substring(i, i+1), x, getHeight()/2 + 5);
+                x += 16;
+            }
+            pen.dispose();
+        }
     }
 
     private class ChatPanel extends JPanel {
@@ -46,28 +73,38 @@ public class DrawingGUI {
 
         public ChatPanel() {
             setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT));
-            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            add(new ChatDisplay());
-            add(new ChatField());
+            setLayout(new BorderLayout());
+            add(new ChatDisplay(), BorderLayout.CENTER);
+            add(new ChatField(), BorderLayout.SOUTH);
 
+            setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
             messages = new LinkedList<>();
         }
 
         private class ChatDisplay extends JPanel {
             public ChatDisplay() {
                 setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT));
-                setBackground(new Color(130, 130, 130));
+                setBackground(new Color(238, 238, 238));
             }
 
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                int spacing = 16;
-                int y = this.getHeight()-spacing;
+                int spacing = 22;
+                int y = this.getHeight();
+                int i = 0;
                 Graphics2D pen = (Graphics2D) g;
                 for (String m : messages) {
-                    pen.drawString(m, 10, y);
+                    if ((messages.size()-i) % 2 == 0) {
+                        pen.setColor(Color.WHITE);
+                        pen.fillRect(0, y-spacing, getWidth(), spacing);
+                    }
+
+                    pen.setColor(Color.BLACK);
+                    pen.drawString(m, 10, y-5);
+
                     y -= spacing;
+                    i++;
                     if (y < 0) {
                         break;
                     }
@@ -79,15 +116,19 @@ public class DrawingGUI {
         private class ChatField extends JTextField implements ActionListener {
             public ChatField() {
                 super();
-                setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT/8));
+                setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT/12));
                 addActionListener(this);
+//                setMargin(new Insets(0, 10, 0, 10));
+                setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 1), BorderFactory.createEmptyBorder(0, 10, 0, 10)));
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (this.getText().length() > 0) {
-                    messagesToSend.add(new Message(111, Message.mType.CHAT, this.getText()));
-                    messages.addFirst(this.getText());
+                    String toSend = gameClient.userName + ": " + this.getText();
+
+                    gameClient.messagesToSend.add(new Message(111, Message.mType.CHAT, toSend));
+                    messages.addFirst(toSend);
                     chatPanel.repaint();
                     this.setText("");
                 }
@@ -112,6 +153,8 @@ public class DrawingGUI {
             addMouseListener(this);
             addMouseMotionListener(this);
             setBackground(new Color(0, 230, 230));
+            setBorder(new BevelBorder(BevelBorder.LOWERED));
+
         }
 
         @Override
@@ -157,6 +200,9 @@ public class DrawingGUI {
         }
 
         private void handleDrawing(int[] coordinates, boolean isNetworked) {
+            if (!gameClient.isAllowedToDraw && !isNetworked) {
+                return;
+            }
 
             if (prevEvent == null) {
                 prevEvent = coordinates;
@@ -176,9 +222,9 @@ public class DrawingGUI {
             pen.dispose();
             this.repaint();
 
-            // Send out to room
-            if (isAllowedToDraw) {
-                messagesToSend.add(new Message(111, Message.mType.DRAW, new int[]{scaled[0], scaled[1], pastScaled[0], pastScaled[1]}));
+            if (gameClient.isAllowedToDraw) {
+                // Send to room
+                gameClient.messagesToSend.add(new Message(111, Message.mType.DRAW, new int[]{scaled[0], scaled[1], pastScaled[0], pastScaled[1]}));
             }
         }
 

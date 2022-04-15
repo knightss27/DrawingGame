@@ -66,23 +66,25 @@ public class ClientConnection {
         public void handleMessage(Message message) {
             System.out.println("SERVER RECEIVED: " + message);
             if (message.type == Message.mType.JOIN) {
+                Message<String> m = (Message<String>) message;
+
                 // Add ourselves to the room
                 if (!rooms.containsKey(message.room)) {
-                    rooms.put(message.room, new LinkedList<>());
+                    rooms.put(m.room, new LinkedList<>());
                 }
-                List<ClientConnection> room = rooms.get(message.room);
+                List<ClientConnection> room = rooms.get(m.room);
                 room.add(ClientConnection.this);
                 hasJoinedRoom = true;
-                if (message.text.length() > 0) {
-                    clientUsername = message.text;
+                if (m.data.length() > 0) {
+                    clientUsername = m.data;
                 }
 
                 // Send out a new message about the room
-                int[] ids = new int[room.size()];
+                String[] ids = new String[room.size()];
                 for (int i = 0; i < room.size(); i++) {
-                    ids[i] = room.get(i).clientId;
+                    ids[i] = room.get(i).clientUsername;
                 }
-                sendToRoom(new Message(message.room, Message.mType.PLAYERS, ids), true);
+                sendToRoom(new Message<>(message.room, Message.mType.PLAYERS, ids), true);
             }
 
             if (message.type == Message.mType.LEAVE) {
@@ -93,7 +95,7 @@ public class ClientConnection {
                         break;
                     }
                 }
-                sendToRoom(new Message(message.room, Message.mType.LEAVE, "" + clientId), true);
+                sendToRoom(new Message<>(message.room, Message.mType.LEAVE, "" + clientId), true);
             }
 
             if (message.type == Message.mType.DRAW || message.type == Message.mType.CHAT) {
