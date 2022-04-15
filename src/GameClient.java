@@ -14,13 +14,19 @@ public class GameClient {
     public LinkedBlockingQueue<Message> messagesToSend = new LinkedBlockingQueue<>();
     DrawingGUI gui;
 
-    public String userName;
+    public Player player;
     public int room = -1;
     public boolean isAllowedToDraw = false;
 
+    public Player[] players;
+
+    public int currentRound = -1;
+    public String currentHint = "";
+    public Player currentDrawer;
+
     public GameClient() {
 
-        userName = GameUtils.generateNewRoomCode();
+        player = new Player(-1, GameUtils.generateNewRoomCode());
 
         try {
             // Connect to server
@@ -44,7 +50,7 @@ public class GameClient {
             ListenThread listenThread = new ClientListenThread(socket, objectInputStream);
             listenThread.start();
 
-            messagesToSend.add(new Message(111, Message.mType.JOIN, userName));
+            messagesToSend.add(new Message(111, Message.mType.JOIN, player));
 
 //            objectInputStream.close();
 //            objectOutputStream.close();
@@ -66,15 +72,35 @@ public class GameClient {
             System.out.println("CLIENT RECEIVED: " + message);
 
             if (message.type == Message.mType.PLAYERS) {
-                Message<String[]> m = (Message<String[]>) message;
-                // Temporarily only allow first join to draw.
-                if (m.data.length == 1) {
-                    isAllowedToDraw = true;
+                Message<Player[]> m = (Message<Player[]>) message;
+
+                if (player.id == -1) {
+                    player = m.data[m.data.length-1];
                 }
 
                 if (room == -1) {
                     room = message.room;
                 }
+
+                players = m.data;
+
+                // Temporarily only allow first join to draw.
+                if (m.data.length == 2) {
+                    messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
+                }
+            }
+
+            if (message.type == Message.mType.ROUND) {
+                Message<Player> m = (Message<Player>) message;
+                currentRound++;
+                currentDrawer = m.data;
+                gui.handleRound(m.data);
+            }
+
+            if (message.type == Message.mType.HINT) {
+                Message<String> m = (Message<String>) message;
+                currentHint = m.data;
+                gui.handleHint(m.data);
             }
 
             if (message.type == Message.mType.DRAW) {

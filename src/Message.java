@@ -9,12 +9,13 @@ public class Message<T> implements Serializable {
         LEAVE,
         DRAW,
         CHAT,
-        ROUND
+        ROUND,
+        START,
+        HINT
     }
 
     public int room;
     public mType type;
-//    public String text;
     public T data;
 
     public Message(int room, mType type, T data) {

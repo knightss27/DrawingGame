@@ -18,8 +18,9 @@ public class DrawingGUI {
     JPanel mainPanel = new JPanel();
     DrawingPanel drawingPanel;
     ChatPanel chatPanel;
+    HintPanel hintPanel;
 
-    final int WIDTH = 640;
+    final int WIDTH = 700;
     final int HEIGHT = 480;
 
     BufferedImage mainImage = new BufferedImage(3*WIDTH/4, HEIGHT, BufferedImage.TYPE_INT_ARGB);;
@@ -30,10 +31,11 @@ public class DrawingGUI {
         this.gameClient = gameClient;
         drawingPanel = new DrawingPanel();
         chatPanel = new ChatPanel();
+        hintPanel = new HintPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(drawingPanel, BorderLayout.CENTER);
         mainPanel.add(chatPanel, BorderLayout.EAST);
-        mainPanel.add(new HintPanel(), BorderLayout.NORTH);
+        mainPanel.add(hintPanel, BorderLayout.NORTH);
         generateFrame(mainPanel);
 
         drawingPanel.createBlank();
@@ -42,6 +44,17 @@ public class DrawingGUI {
     public void handleChat(Message<String> m) {
         chatPanel.messages.addFirst(m.data);
         chatPanel.repaint();
+    }
+
+    public void handleRound(Player drawingPlayer) {
+        isAllowedToDraw = gameClient.player.equals(drawingPlayer);
+        System.out.println("Drawing: " + drawingPlayer.id + ", is: " + gameClient.player.id + ", " + isAllowedToDraw);
+        drawingPanel.createBlank();
+    }
+
+    public void handleHint(String hint) {
+        hintPanel.currentWord = hint;
+        hintPanel.repaint();
     }
 
     private class HintPanel extends JPanel {
@@ -77,7 +90,7 @@ public class DrawingGUI {
             add(new ChatDisplay(), BorderLayout.CENTER);
             add(new ChatField(), BorderLayout.SOUTH);
 
-            setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+            setBorder(BorderFactory.createMatteBorder(0, 2, 2, 2, Color.LIGHT_GRAY));
             messages = new LinkedList<>();
         }
 
@@ -118,18 +131,14 @@ public class DrawingGUI {
                 super();
                 setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT/12));
                 addActionListener(this);
-//                setMargin(new Insets(0, 10, 0, 10));
                 setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 1), BorderFactory.createEmptyBorder(0, 10, 0, 10)));
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (this.getText().length() > 0) {
-                    String toSend = gameClient.userName + ": " + this.getText();
-
+                    String toSend = this.getText();
                     gameClient.messagesToSend.add(new Message(111, Message.mType.CHAT, toSend));
-                    messages.addFirst(toSend);
-                    chatPanel.repaint();
                     this.setText("");
                 }
             }
@@ -200,7 +209,7 @@ public class DrawingGUI {
         }
 
         private void handleDrawing(int[] coordinates, boolean isNetworked) {
-            if (!gameClient.isAllowedToDraw && !isNetworked) {
+            if (!isAllowedToDraw && !isNetworked) {
                 return;
             }
 
@@ -222,7 +231,7 @@ public class DrawingGUI {
             pen.dispose();
             this.repaint();
 
-            if (gameClient.isAllowedToDraw) {
+            if (isAllowedToDraw) {
                 // Send to room
                 gameClient.messagesToSend.add(new Message(111, Message.mType.DRAW, new int[]{scaled[0], scaled[1], pastScaled[0], pastScaled[1]}));
             }
