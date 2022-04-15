@@ -6,6 +6,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ClientConnection {
     ListenThread listenThread;
     SendThread sendThread;
+
+//    GameTimer gameTimer;
+
     Socket socket;
     ObjectInputStream objectInputStream;
     ObjectOutputStream objectOutputStream;
@@ -48,6 +51,16 @@ public class ClientConnection {
         sendThread.start();
     }
 
+    public void startTimer(String newWord) {
+        // TODO: Add the logic! But the callbacks are working.
+        GameTimer gameTimer = new GameTimer(newWord.length(), () -> {
+            System.out.println("Hint update callback.");
+        }, () -> {
+            System.out.println("Game end callback.");
+        });
+        gameTimer.start();
+    }
+
     public void sendMessage(Message message) {
         messagesToSend.add(message);
     }
@@ -56,6 +69,7 @@ public class ClientConnection {
         currentRound++;
         currentWord = word;
         currentPlayer = playerDrawing;
+        sendMessage(new Message<>(currentRoom, Message.mType.CHAT, playerDrawing.name + " is now drawing!"));
         sendMessage(new Message<>(currentRoom, Message.mType.ROUND, playerDrawing));
         sendMessage(new Message<>(currentRoom, Message.mType.HINT, playerDrawing.equals(player) ? word : "_".repeat(word.length())));
     }
@@ -181,5 +195,6 @@ public class ClientConnection {
         for (ClientConnection c : clients) {
             c.sendToNextRound(nextPlayer, newWord);
         }
+        startTimer(newWord);
     }
 }

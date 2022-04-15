@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -51,6 +52,8 @@ public class GameClient {
 
             ListenThread listenThread = new ClientListenThread(socket, objectInputStream);
             listenThread.start();
+
+            player.name = JOptionPane.showInputDialog("Set your username!");
 
             messagesToSend.add(new Message(111, Message.mType.JOIN, player));
 
