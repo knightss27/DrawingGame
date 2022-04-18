@@ -53,7 +53,8 @@ public class GameClient {
             ListenThread listenThread = new ClientListenThread(socket, objectInputStream);
             listenThread.start();
 
-            player.name = JOptionPane.showInputDialog("Set your username!");
+//            player.name = JOptionPane.showInputDialog("Set your username!");
+            player.name = Integer.toString(((int) (1000 * Math.random())));
 
             messagesToSend.add(new Message(111, Message.mType.JOIN, player));
 

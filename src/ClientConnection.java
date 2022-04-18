@@ -25,6 +25,8 @@ public class ClientConnection {
     Player currentPlayer;
     boolean guessedCorrectly = false;
     int totalCorrectGuessesReceived = 0;
+    String currentHint;
+    int hintLength = 0;
 
     public ClientConnection(Socket socket, HashMap<Integer, List<ClientConnection>> rooms) {
         System.out.println("- Creating new client connection");
@@ -51,14 +53,37 @@ public class ClientConnection {
         sendThread.start();
     }
 
+
     public void startTimer(String newWord) {
         // TODO: Add the logic! But the callbacks are working.
         GameTimer gameTimer = new GameTimer(newWord.length(), () -> {
             System.out.println("Hint update callback.");
+
+            currentHint = generateNextHint();
+
+            System.out.println("New hint created: " + currentHint);
+            sendToRoom(new Message<>(currentRoom, Message.mType.HINT, currentHint), true);
         }, () -> {
             System.out.println("Game end callback.");
         });
         gameTimer.start();
+    }
+
+    private String generateNextHint() {
+        int randomSpot = (int) (Math.random() * currentWord.length() - hintLength);
+        int space = 0;
+
+        for (int i = 0; i < currentHint.length(); i++) {
+            String character = Character.toString(currentHint.charAt(i));
+            if (character.equals("_")) {
+                if (space == randomSpot) {
+                    currentHint = currentHint.substring(0, i) + currentWord.charAt(i) + currentHint.substring(i+1);
+                }
+                space++;
+            }
+        }
+        hintLength++;
+        return currentHint;
     }
 
     public void sendMessage(Message message) {
@@ -68,16 +93,26 @@ public class ClientConnection {
     public void sendToNextRound(Player playerDrawing, String word) {
         currentRound++;
         currentWord = word;
+        currentHint = "_".repeat(word.length());
         currentPlayer = playerDrawing;
+        guessedCorrectly = false;
+        totalCorrectGuessesReceived = 0;
+        hintLength = 0;
+
+        System.out.println("Sending to next round. Is drawing? " + currentPlayer.equals(player));
+
         sendMessage(new Message<>(currentRoom, Message.mType.CHAT, playerDrawing.name + " is now drawing!"));
         sendMessage(new Message<>(currentRoom, Message.mType.ROUND, playerDrawing));
-        sendMessage(new Message<>(currentRoom, Message.mType.HINT, playerDrawing.equals(player) ? word : "_".repeat(word.length())));
+        sendMessage(new Message<>(currentRoom, Message.mType.HINT, playerDrawing.equals(player) ? word : currentHint));
     }
 
     private void sendToRoom(Message message, boolean includeSender) {
         List<ClientConnection> messages = rooms.get(message.room);
         for (ClientConnection c : messages) {
             if (!includeSender && c.player.equals(this.player)) {
+                continue;
+            }
+            if (message.type == Message.mType.HINT && currentPlayer.equals(c.player)) {
                 continue;
             }
             c.sendMessage(message);
@@ -146,9 +181,9 @@ public class ClientConnection {
 
                 if (currentRound >= 0) {
                     if (currentPlayer.equals(player)) {
-                        m.data = ": I'm dumb!";
+                        m.data = ": I *love* this game!";
                     } else {
-                        if (m.data.equals(currentWord)) {
+                        if (m.data.toLowerCase().equals(currentWord)) {
                             m.data = " guessed the word!";
                             justGuessedCorrect = true;
                         } else {

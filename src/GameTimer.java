@@ -1,6 +1,6 @@
 public class GameTimer extends Thread {
 
-    public static final int GAME_LENGTH = 20;
+    public static final int GAME_LENGTH = 60;
 
     public Runnable hintUpdateCallback;
     public Runnable gameEndCallback;
