@@ -152,14 +152,19 @@ public class ClientConnection {
             }
 
             if (message.type == Message.mType.LEAVE) {
-                List<ClientConnection> room = rooms.get(message.room);
+                List<ClientConnection> room = rooms.get(currentRoom);
                 for (ClientConnection c : room) {
                     if (c.player.equals(player)) {
                         room.remove(c);
                         break;
                     }
                 }
-                sendToRoom(new Message<>(message.room, Message.mType.LEAVE, player), true);
+
+                if (message.room == -1) {
+                    objectInputStream = null;
+                } else {
+                    sendToRoom(new Message<>(currentRoom, Message.mType.LEAVE, player), true);
+                }
             }
 
             if (message.type == Message.mType.START) {
@@ -183,7 +188,7 @@ public class ClientConnection {
                     if (currentPlayer.equals(player)) {
                         m.data = ": I *love* this game!";
                     } else {
-                        if (m.data.toLowerCase().equals(currentWord)) {
+                        if (m.data.equalsIgnoreCase(currentWord)) {
                             m.data = " guessed the word!";
                             justGuessedCorrect = true;
                         } else {

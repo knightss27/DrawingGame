@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -28,11 +29,12 @@ public class GameClient {
     boolean isFirstPlayer = false;
 
     public GameClient() {
-
         player = new Player(-1, GameUtils.generateNewRoomCode());
+        startClient();
+    }
 
+    private void startClient() {
         try {
-            // Connect to server
             Socket socket = new Socket("localhost", 12345);
             InputStream inputStream = socket.getInputStream();
             OutputStream outputStream = socket.getOutputStream();
@@ -42,7 +44,6 @@ public class GameClient {
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
             objectOutputStream.flush();
-
             ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
 
             gui = new DrawingGUI(this);
@@ -57,14 +58,20 @@ public class GameClient {
             player.name = Integer.toString(((int) (1000 * Math.random())));
 
             messagesToSend.add(new Message(111, Message.mType.JOIN, player));
-
-//            objectInputStream.close();
-//            objectOutputStream.close();
-//            socket.close();
         }
         catch (IOException ioe) {
-            System.out.println("ACK! ACK!! It's an Exception!!");
-            System.out.println(ioe);
+            if (ioe instanceof ConnectException) {
+                System.out.println("Failed to connect to server. Retrying in 10 seconds");
+                try {
+                    Thread.sleep(10000);
+                    startClient();
+                } catch (InterruptedException e) {
+                    System.out.println("Exited while sleeping for retry");
+                }
+            } else {
+                System.out.println("ACK! ACK!! It's an Exception!!");
+                System.out.println(ioe);
+            }
         }
     }
 
@@ -119,6 +126,14 @@ public class GameClient {
 
             if (message.type == Message.mType.CHAT) {
                 gui.handleChat(message);
+            }
+
+            if (message.type == Message.mType.LEAVE) {
+                if (message.room != -1) {
+                    System.out.println("Should handle leave.");
+                } else {
+                    objectInputStream = null;
+                }
             }
         }
     }
