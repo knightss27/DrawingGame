@@ -50,6 +50,7 @@ public class DrawingGUI {
         isAllowedToDraw = gameClient.player.equals(drawingPlayer);
         System.out.println("Drawing: " + drawingPlayer.id + ", is: " + gameClient.player.id + ", " + isAllowedToDraw);
         drawingPanel.createBlank();
+        hintPanel.startTimer();
     }
 
     public void handleHint(String hint) {
@@ -59,10 +60,26 @@ public class DrawingGUI {
 
     private class HintPanel extends JPanel {
         public String currentWord = "testing";
+        public int currentTime = 0;
+        Timer timer;
 
         public HintPanel() {
             setPreferredSize(new Dimension(3*DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT/10));
             setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
+        }
+
+        public void startTimer() {
+            if (timer != null) {
+                timer.stop();
+            }
+            currentTime = 60;
+            timer = new Timer(1000, e -> {
+                if (currentTime > 0) {
+                    currentTime--;
+                    HintPanel.this.repaint();
+                }
+            });
+            timer.start();
         }
 
         @Override
@@ -71,6 +88,11 @@ public class DrawingGUI {
             paintBorder(g);
 
             Graphics2D pen = (Graphics2D) g;
+            // Paint time
+            pen.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+            pen.drawString(Integer.toString(currentTime), 20, getHeight()/2 + 5);
+
+            // Paint letters
             int x = getWidth()/2 - currentWord.length()/2 * 16;
             for (int i = 0; i < currentWord.length(); i++) {
                 pen.drawString(currentWord.substring(i, i+1), x, getHeight()/2 + 5);

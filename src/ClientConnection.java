@@ -65,6 +65,13 @@ public class ClientConnection {
             sendToRoom(new Message<>(currentRoom, Message.mType.HINT, currentHint), true);
         }, () -> {
             System.out.println("Game end callback.");
+            sendToRoom(new Message<>(currentRoom, Message.mType.HINT, currentWord), true);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            sendToNewRound(currentRoom);
         });
         gameTimer.start();
     }
@@ -93,7 +100,7 @@ public class ClientConnection {
     public void sendToNextRound(Player playerDrawing, String word) {
         currentRound++;
         currentWord = word;
-        currentHint = "_".repeat(word.length());
+        currentHint = word.replaceAll("[a-zA-Z0-9_]", "_");
         currentPlayer = playerDrawing;
         guessedCorrectly = false;
         totalCorrectGuessesReceived = 0;
