@@ -7,7 +7,7 @@ public class ClientConnection {
     ListenThread listenThread;
     SendThread sendThread;
 
-//    GameTimer gameTimer;
+    GameTimer gameTimer;
 
     Socket socket;
     ObjectInputStream objectInputStream;
@@ -56,7 +56,12 @@ public class ClientConnection {
 
     public void startTimer(String newWord) {
         // TODO: Add the logic! But the callbacks are working.
-        GameTimer gameTimer = new GameTimer(newWord.length(), () -> {
+
+        if (gameTimer != null) {
+            gameTimer.interrupt();
+        }
+
+        gameTimer = new GameTimer(newWord.length(), () -> {
             System.out.println("Hint update callback.");
 
             currentHint = generateNextHint();
