@@ -3,6 +3,7 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,13 +21,14 @@ public class GameClient {
     public int room = -1;
     public boolean isAllowedToDraw = false;
 
-    public Player[] players;
+    public Player[] players = new Player[]{};
 
     public int currentRound = -1;
     public String currentHint = "";
     public Player currentDrawer;
 
     boolean isFirstPlayer = false;
+    boolean startedGame = false;
 
     public GameClient() {
         player = new Player(-1, GameUtils.generateNewRoomCode());
@@ -97,13 +99,16 @@ public class GameClient {
 
                 players = m.data;
 
-
-                // Temporarily only allow third join to start the game.
-                if (m.data.length == 1) {
+                // Temporarily only allow second join to start the game.
+                if (m.data.length == 1 && !isFirstPlayer) {
                     isFirstPlayer = true;
-                } else if (m.data.length == 2 && isFirstPlayer) {
+                } else if (m.data.length == 2 && isFirstPlayer && !startedGame) {
+                    startedGame = true;
                     messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
                 }
+
+                System.out.println("Players received:" + Arrays.toString(m.data));
+                gui.updatePlayers();
             }
 
             if (message.type == Message.mType.ROUND) {

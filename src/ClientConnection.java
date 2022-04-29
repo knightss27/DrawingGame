@@ -55,8 +55,6 @@ public class ClientConnection {
 
 
     public void startTimer(String newWord) {
-        // TODO: Add the logic! But the callbacks are working.
-
         if (gameTimer != null) {
             gameTimer.interrupt();
         }
@@ -116,6 +114,10 @@ public class ClientConnection {
         sendMessage(new Message<>(currentRoom, Message.mType.CHAT, playerDrawing.name + " is now drawing!"));
         sendMessage(new Message<>(currentRoom, Message.mType.ROUND, playerDrawing));
         sendMessage(new Message<>(currentRoom, Message.mType.HINT, playerDrawing.equals(player) ? word : currentHint));
+
+        if (playerDrawing.equals(player)) {
+            startTimer(currentWord);
+        }
     }
 
     private void sendToRoom(Message message, boolean includeSender) {
@@ -129,6 +131,15 @@ public class ClientConnection {
             }
             c.sendMessage(message);
         }
+    }
+
+    private Player[] getPlayersInRoom() {
+        List<ClientConnection> room = rooms.get(currentRoom);
+        Player[] ids = new Player[room.size()];
+        for (int i = 0; i < room.size(); i++) {
+            ids[i] = room.get(i).player;
+        }
+        return ids;
     }
 
     private class ServerListenThread extends ListenThread {
@@ -216,6 +227,11 @@ public class ClientConnection {
 
                 if (justGuessedCorrect) {
                     guessedCorrectly = true;
+                    ClientConnection current = getCurrentPlayerConnection();
+                    System.out.println("Thinks that " + current.player.name + " is timer.");
+                    int currentTime = getCurrentPlayerConnection().gameTimer.getCurrentTime();
+                    System.out.println("Guessed at time: " + currentTime);
+                    player.points += 300 * ((double) currentTime/GameTimer.GAME_LENGTH) + 100;
                     getCurrentPlayerConnection().checkWithNewCorrectGuess();
                 }
             }
@@ -226,6 +242,11 @@ public class ClientConnection {
         totalCorrectGuessesReceived++;
         System.out.println("Total correct guesses: " + totalCorrectGuessesReceived);
         if (totalCorrectGuessesReceived == rooms.get(currentRoom).size()-1) {
+
+            Player[] players = getPlayersInRoom();
+            System.out.println("Sending players: " + Arrays.toString(players));
+
+            sendToRoom(new Message<>(currentRoom, Message.mType.PLAYERS, getPlayersInRoom()), true);
             sendToNewRound(currentRoom);
         }
     }
@@ -247,6 +268,5 @@ public class ClientConnection {
         for (ClientConnection c : clients) {
             c.sendToNextRound(nextPlayer, newWord);
         }
-        startTimer(newWord);
     }
 }

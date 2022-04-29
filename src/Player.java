@@ -4,10 +4,12 @@ import java.util.Objects;
 public class Player implements Serializable {
     public int id;
     public String name;
+    public int points;
 
     public Player(int id, String name) {
         this.id = id;
         this.name = name;
+        this.points = 0;
     }
 
     @Override
@@ -21,5 +23,14 @@ public class Player implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(id, name);
+    }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", points=" + points +
+                '}';
     }
 }

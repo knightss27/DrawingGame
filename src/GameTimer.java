@@ -5,6 +5,7 @@ public class GameTimer extends Thread {
     public Runnable hintUpdateCallback;
     public Runnable gameEndCallback;
     public int hintLength;
+    public int currentTime = 0;
 
     public GameTimer(int hintLength, Runnable hintUpdateCallback, Runnable gameEndCallback) {
         this.hintLength = hintLength;
@@ -12,13 +13,20 @@ public class GameTimer extends Thread {
         this.gameEndCallback = gameEndCallback;
     }
 
+    public int getCurrentTime() {
+        return GAME_LENGTH-currentTime;
+    }
+
     @Override
     public void run() {
         try {
-            int interval = GAME_LENGTH * 1000 / (hintLength - 2);
-            for (int i = 0; i < hintLength-2; i++) {
-                Thread.sleep(interval);
-                hintUpdateCallback.run();
+            int interval = GAME_LENGTH / (hintLength - 1);
+//            System.out.println("GameTimerInterval: " + interval);
+            for (currentTime = 0; currentTime < GAME_LENGTH; currentTime++) {
+                Thread.sleep(1000);
+                if (currentTime % interval == 0) {
+                    hintUpdateCallback.run();
+                }
             }
             gameEndCallback.run();
         } catch (InterruptedException e) {

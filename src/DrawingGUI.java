@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -18,9 +19,10 @@ public class DrawingGUI {
     JPanel mainPanel = new JPanel();
     DrawingPanel drawingPanel;
     ChatPanel chatPanel;
+    PlayerPanel playerPanel;
     HintPanel hintPanel;
 
-    final int WIDTH = 700;
+    final int WIDTH = 900;
     final int HEIGHT = 480;
 
     BufferedImage mainImage = new BufferedImage(3*WIDTH/4, HEIGHT, BufferedImage.TYPE_INT_ARGB);;
@@ -31,10 +33,12 @@ public class DrawingGUI {
         this.gameClient = gameClient;
         drawingPanel = new DrawingPanel();
         chatPanel = new ChatPanel();
+        playerPanel = new PlayerPanel();
         hintPanel = new HintPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(drawingPanel, BorderLayout.CENTER);
         mainPanel.add(chatPanel, BorderLayout.EAST);
+        mainPanel.add(playerPanel, BorderLayout.WEST);
         mainPanel.add(hintPanel, BorderLayout.NORTH);
         generateFrame(mainPanel);
 
@@ -56,6 +60,10 @@ public class DrawingGUI {
     public void handleHint(String hint) {
         hintPanel.currentWord = hint;
         hintPanel.repaint();
+    }
+
+    public void updatePlayers() {
+        playerPanel.repaint();
     }
 
     private class HintPanel extends JPanel {
@@ -102,12 +110,44 @@ public class DrawingGUI {
         }
     }
 
+    private class PlayerPanel extends JPanel {
+        public PlayerPanel() {
+            setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/5, DrawingGUI.this.HEIGHT));
+            setBorder(BorderFactory.createMatteBorder(0, 2, 2, 2, Color.LIGHT_GRAY));
+            setBackground(new Color(238, 238, 238));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            paintBorder(g);
+            int spacing = 22;
+            int y = getHeight()/10;
+            Graphics2D pen = (Graphics2D) g;
+            pen.drawString("Player", 10, y);
+            pen.drawString("Points", getWidth()-50, y);
+
+            for (Player p : gameClient.players) {
+                y += spacing;
+                if (y > getHeight()) {
+                    break;
+                }
+
+                pen.setColor(Color.BLACK);
+                pen.drawString(p.name, 10, y-5);
+                pen.drawString(Integer.toString(p.points), getWidth()-50, y-5);
+            }
+            pen.dispose();
+
+        }
+    }
+
     private class ChatPanel extends JPanel {
 
         LinkedList<String> messages;
 
         public ChatPanel() {
-            setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/4, DrawingGUI.this.HEIGHT));
+            setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/5, DrawingGUI.this.HEIGHT));
             setLayout(new BorderLayout());
             add(new ChatDisplay(), BorderLayout.CENTER);
             add(new ChatField(), BorderLayout.SOUTH);
