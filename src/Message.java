@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class Message<T> implements Serializable {
 
@@ -10,7 +11,8 @@ public class Message<T> implements Serializable {
      *  CHAT - String <br>
      *  ROUND - Player <br>
      *  START <br>
-     *  HINT - String
+     *  HINT - String <br>
+     *  BRUSH - int[]
      */
     public enum mType {
         JOIN,
@@ -20,7 +22,8 @@ public class Message<T> implements Serializable {
         CHAT,
         ROUND,
         START,
-        HINT
+        HINT,
+        BRUSH // [width, color.getRGB()]
     }
 
     public int room;
@@ -35,6 +38,9 @@ public class Message<T> implements Serializable {
 
     @Override
     public String toString() {
+        if (this.type == mType.PLAYERS) {
+            return "[" + this.room + ", " + this.type + ", " + Arrays.toString((Player[]) this.data) + "]";
+        }
         return "[" + this.room + ", " + this.type + ", " + this.data + "]";
     }
 }

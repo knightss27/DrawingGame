@@ -16,7 +16,7 @@ public class GameServer {
     public void run() {
         try {
             // Server listening
-            int port = 12345;
+            int port = 8007;
             ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("Server listening on port " + port);
 

@@ -19,6 +19,7 @@ public class SendThread extends Thread {
                 Message message = messagesToSend.take();
                 objectOutputStream.writeObject(message);
                 objectOutputStream.flush();
+                objectOutputStream.reset();
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
             }

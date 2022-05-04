@@ -1,8 +1,7 @@
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.LineBorder;
+import javax.swing.border.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -21,9 +20,13 @@ public class DrawingGUI {
     ChatPanel chatPanel;
     PlayerPanel playerPanel;
     HintPanel hintPanel;
+    BrushPanel brushPanel;
 
     final int WIDTH = 900;
     final int HEIGHT = 480;
+
+    int brushWidth = 4;
+    Color brushColor = Color.BLACK;
 
     BufferedImage mainImage = new BufferedImage(3*WIDTH/4, HEIGHT, BufferedImage.TYPE_INT_ARGB);;
 
@@ -35,11 +38,13 @@ public class DrawingGUI {
         chatPanel = new ChatPanel();
         playerPanel = new PlayerPanel();
         hintPanel = new HintPanel();
+        brushPanel = new BrushPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(drawingPanel, BorderLayout.CENTER);
         mainPanel.add(chatPanel, BorderLayout.EAST);
         mainPanel.add(playerPanel, BorderLayout.WEST);
         mainPanel.add(hintPanel, BorderLayout.NORTH);
+        mainPanel.add(brushPanel, BorderLayout.SOUTH);
         generateFrame(mainPanel);
 
         drawingPanel.createBlank();
@@ -51,10 +56,13 @@ public class DrawingGUI {
     }
 
     public void handleRound(Player drawingPlayer) {
+        brushWidth = 4;
+        brushColor = Color.BLACK;
         isAllowedToDraw = gameClient.player.equals(drawingPlayer);
         System.out.println("Drawing: " + drawingPlayer.id + ", is: " + gameClient.player.id + ", " + isAllowedToDraw);
         drawingPanel.createBlank();
         hintPanel.startTimer();
+        brushPanel.setVisible(isAllowedToDraw);
     }
 
     public void handleHint(String hint) {
@@ -64,6 +72,98 @@ public class DrawingGUI {
 
     public void updatePlayers() {
         playerPanel.repaint();
+    }
+
+    public void handleBrush(int[] brushData) {
+        brushWidth = brushData[0];
+        brushColor = new Color(brushData[1]);
+    }
+
+    private class BrushPanel extends JPanel {
+        BrushPanel() {
+            add(new ColorButton());
+            add(new BrushWidthSlider());
+            setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
+            setPreferredSize(new Dimension((3*DrawingGUI.this.WIDTH)/4, DrawingGUI.this.HEIGHT/5));
+        }
+
+
+        class BrushWidthSlider extends JSlider implements ChangeListener {
+
+            BrushWidthSlider() {
+                super(JSlider.HORIZONTAL, 0, 50, 4);
+                addChangeListener(this);
+                setBorder(new TitledBorder("Brush Width"));
+                setMajorTickSpacing(10);
+                setMinorTickSpacing(5);
+                setPaintTicks(true);
+                setPaintLabels(true);
+            }
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                JSlider source = (JSlider)e.getSource();
+                if (!source.getValueIsAdjusting() && isAllowedToDraw) {
+                    brushWidth = (int) source.getValue();
+                    gameClient.messagesToSend.add(new Message<>(gameClient.room, Message.mType.BRUSH, new int[]{brushWidth, brushColor.getRGB()}));
+                }
+            }
+        }
+
+        class ColorButton extends JButton implements ActionListener, MouseListener {
+            ColorButton() {
+                super("Brush Color");
+                addActionListener(this);
+                addMouseListener(this);
+                setToolTipText("Set the paintbrush color");
+                setBorder(new TitledBorder("Color"));
+                this.setContentAreaFilled(false);
+                this.setFocusPainted(false);
+            }
+
+            public void paint(Graphics g) {
+                super.paint(g);
+                Graphics2D graphics2D = (Graphics2D) g;
+                graphics2D.setColor(brushColor);
+                graphics2D.fillRect(4, 15, getWidth()-6, getHeight()-22);
+                graphics2D.dispose();
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Action done");
+                if (!isAllowedToDraw) {
+                    return;
+                }
+                brushColor = JColorChooser.showDialog(mainPanel, "Choose paint color", brushColor);
+                gameClient.messagesToSend.add(new Message<>(gameClient.room, Message.mType.BRUSH, new int[]{brushWidth, brushColor.getRGB()}));
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            }
+        }
     }
 
     private class HintPanel extends JPanel {
@@ -223,9 +323,8 @@ public class DrawingGUI {
             addComponentListener(this);
             addMouseListener(this);
             addMouseMotionListener(this);
-            setBackground(new Color(0, 230, 230));
+            setBackground(Color.LIGHT_GRAY);
             setBorder(new BevelBorder(BevelBorder.LOWERED));
-
         }
 
         @Override
@@ -287,8 +386,8 @@ public class DrawingGUI {
             }
 
             Graphics2D pen = (Graphics2D) mainImage.getGraphics();
-            pen.setColor(Color.BLACK); // TODO - add colors
-            pen.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            pen.setColor(brushColor);
+            pen.setStroke(new BasicStroke(brushWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             pen.drawLine(scaled[0], scaled[1], pastScaled[0], pastScaled[1]);
             pen.dispose();
             this.repaint();

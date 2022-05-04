@@ -27,6 +27,7 @@ public class ClientConnection {
     int totalCorrectGuessesReceived = 0;
     String currentHint;
     int hintLength = 0;
+    boolean isGameOver = false;
 
     public ClientConnection(Socket socket, HashMap<Integer, List<ClientConnection>> rooms) {
         System.out.println("- Creating new client connection");
@@ -68,6 +69,7 @@ public class ClientConnection {
             sendToRoom(new Message<>(currentRoom, Message.mType.HINT, currentHint), true);
         }, () -> {
             System.out.println("Game end callback.");
+            isGameOver = true;
             sendToRoom(new Message<>(currentRoom, Message.mType.HINT, currentWord), true);
             try {
                 Thread.sleep(2000);
@@ -202,7 +204,11 @@ public class ClientConnection {
                 sendToRoom(message, false);
             }
 
-            if (message.type == Message.mType.CHAT) {
+            if (message.type == Message.mType.BRUSH) {
+                sendToRoom(message, false);
+            }
+
+            if (message.type == Message.mType.CHAT && !getCurrentPlayerConnection().isGameOver) {
                 Message<String> m = (Message<String>) message;
 
                 boolean justGuessedCorrect = false;
@@ -265,7 +271,12 @@ public class ClientConnection {
         String newWord = GameUtils.generateNewWord();
         List<ClientConnection> clients = rooms.get(room);
         Player nextPlayer = clients.get((currentRound + 1) % clients.size()).player;
+
+        if (gameTimer != null) {
+            gameTimer.interrupt();
+        }
         for (ClientConnection c : clients) {
+            c.isGameOver = false;
             c.sendToNextRound(nextPlayer, newWord);
         }
     }

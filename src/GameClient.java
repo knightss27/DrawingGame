@@ -1,11 +1,7 @@
-import javax.swing.*;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class GameClient {
@@ -37,7 +33,7 @@ public class GameClient {
 
     private void startClient() {
         try {
-            Socket socket = new Socket("localhost", 12345);
+            Socket socket = new Socket("localhost", 8007);
             InputStream inputStream = socket.getInputStream();
             OutputStream outputStream = socket.getOutputStream();
 
@@ -107,7 +103,6 @@ public class GameClient {
                     messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
                 }
 
-                System.out.println("Players received:" + Arrays.toString(m.data));
                 gui.updatePlayers();
             }
 
@@ -131,6 +126,11 @@ public class GameClient {
 
             if (message.type == Message.mType.CHAT) {
                 gui.handleChat(message);
+            }
+
+            if (message.type == Message.mType.BRUSH) {
+                Message<int[]> m = (Message<int[]>) message;
+                gui.handleBrush(m.data);
             }
 
             if (message.type == Message.mType.LEAVE) {

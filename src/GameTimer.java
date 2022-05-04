@@ -21,7 +21,6 @@ public class GameTimer extends Thread {
     public void run() {
         try {
             int interval = GAME_LENGTH / (hintLength - 1);
-//            System.out.println("GameTimerInterval: " + interval);
             for (currentTime = 0; currentTime < GAME_LENGTH; currentTime++) {
                 Thread.sleep(1000);
                 if (currentTime % interval == 0) {
@@ -30,7 +29,7 @@ public class GameTimer extends Thread {
             }
             gameEndCallback.run();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            System.out.println("GameTimer ended.");
         }
     }
 }
