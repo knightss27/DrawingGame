@@ -34,7 +34,7 @@ public class GameClient {
 
     private void startClient() {
         try {
-            Socket socket = new Socket("localhost", 8007);
+            Socket socket = new Socket("cs.catlin.edu", 8007);
             InputStream inputStream = socket.getInputStream();
             OutputStream outputStream = socket.getOutputStream();
 
@@ -100,8 +100,8 @@ public class GameClient {
                 if (m.data.length == 1 && !isFirstPlayer) {
                     isFirstPlayer = true;
                 } else if (m.data.length == 2 && isFirstPlayer && !startedGame) {
-                    startedGame = true;
                     messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
+                    startedGame = true;
                 }
 
                 gui.updatePlayers();

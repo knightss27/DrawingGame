@@ -42,9 +42,8 @@ public class DrawingGUI {
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(drawingPanel, BorderLayout.CENTER);
         mainPanel.add(chatPanel, BorderLayout.EAST);
-        mainPanel.add(playerPanel, BorderLayout.WEST);
+        mainPanel.add(new LeftSidebarPanel(), BorderLayout.WEST);
         mainPanel.add(hintPanel, BorderLayout.NORTH);
-        mainPanel.add(brushPanel, BorderLayout.SOUTH);
         generateFrame(mainPanel);
 
         drawingPanel.createBlank();
@@ -77,6 +76,15 @@ public class DrawingGUI {
     public void handleBrush(int[] brushData) {
         brushWidth = brushData[0];
         brushColor = new Color(brushData[1]);
+    }
+
+    private class LeftSidebarPanel extends JPanel {
+        LeftSidebarPanel() {
+            setLayout(new BorderLayout());
+            add(playerPanel, BorderLayout.NORTH);
+            add(brushPanel, BorderLayout.SOUTH);
+            setPreferredSize(new Dimension(DrawingGUI.this.WIDTH/5, DrawingGUI.this.HEIGHT));
+        }
     }
 
     private class BrushPanel extends JPanel {
