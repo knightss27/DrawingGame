@@ -21,6 +21,7 @@ public class DrawingGUI {
     PlayerPanel playerPanel;
     HintPanel hintPanel;
     BrushPanel brushPanel;
+    LeftSidebarPanel leftSidebarPanel;
 
     final int WIDTH = 900;
     final int HEIGHT = 480;
@@ -39,10 +40,11 @@ public class DrawingGUI {
         playerPanel = new PlayerPanel();
         hintPanel = new HintPanel();
         brushPanel = new BrushPanel();
+        leftSidebarPanel = new LeftSidebarPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(drawingPanel, BorderLayout.CENTER);
         mainPanel.add(chatPanel, BorderLayout.EAST);
-        mainPanel.add(new LeftSidebarPanel(), BorderLayout.WEST);
+        mainPanel.add(leftSidebarPanel, BorderLayout.WEST);
         mainPanel.add(hintPanel, BorderLayout.NORTH);
         generateFrame(mainPanel);
 
@@ -61,7 +63,6 @@ public class DrawingGUI {
         System.out.println("Drawing: " + drawingPlayer.id + ", is: " + gameClient.player.id + ", " + isAllowedToDraw);
         drawingPanel.createBlank();
         hintPanel.startTimer();
-        brushPanel.setVisible(isAllowedToDraw);
     }
 
     public void handleHint(String hint) {
@@ -71,11 +72,13 @@ public class DrawingGUI {
 
     public void updatePlayers() {
         playerPanel.repaint();
+        leftSidebarPanel.repaint();
     }
 
     public void handleBrush(int[] brushData) {
         brushWidth = brushData[0];
         brushColor = new Color(brushData[1]);
+        brushPanel.repaint();
     }
 
     private class LeftSidebarPanel extends JPanel {
@@ -92,7 +95,7 @@ public class DrawingGUI {
             add(new ColorButton());
             add(new BrushWidthSlider());
             setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
-            setPreferredSize(new Dimension((3*DrawingGUI.this.WIDTH)/4, DrawingGUI.this.HEIGHT/5));
+            setPreferredSize(new Dimension((DrawingGUI.this.WIDTH)/5, DrawingGUI.this.HEIGHT/5));
         }
 
 

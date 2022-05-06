@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class GameClient {
@@ -34,7 +33,7 @@ public class GameClient {
 
     private void startClient() {
         try {
-            Socket socket = new Socket("cs.catlin.edu", 8007);
+            Socket socket = new Socket("localhost", 8007);
             InputStream inputStream = socket.getInputStream();
             OutputStream outputStream = socket.getOutputStream();
 
@@ -99,7 +98,7 @@ public class GameClient {
                 // Temporarily only allow second join to start the game.
                 if (m.data.length == 1 && !isFirstPlayer) {
                     isFirstPlayer = true;
-                } else if (m.data.length == 4 && isFirstPlayer && !startedGame) {
+                } else if (m.data.length == 2 && isFirstPlayer && !startedGame) {
                     messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
                     startedGame = true;
                 }
