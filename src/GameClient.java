@@ -99,7 +99,7 @@ public class GameClient {
                 // Temporarily only allow second join to start the game.
                 if (m.data.length == 1 && !isFirstPlayer) {
                     isFirstPlayer = true;
-                } else if (m.data.length == 2 && isFirstPlayer && !startedGame) {
+                } else if (m.data.length == 4 && isFirstPlayer && !startedGame) {
                     messagesToSend.add(new Message<>(m.room, Message.mType.START, player));
                     startedGame = true;
                 }
